@@ -54,7 +54,7 @@ jobs:
         pyinstaller --onefile --clean --noconfirm --name="目录扫描器" --icon=icon.png --distpath=dist/linux directory_scanner.py
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: 目录扫描器-${{ matrix.platform }}
         path: dist/${{ matrix.platform }}/
