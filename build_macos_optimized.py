@@ -38,15 +38,17 @@ def build_optimized_macos():
         '--optimize=2',          # Python字节码优化级别
         '--strip',               # 去除调试符号
         '--exclude-module=matplotlib',  # 排除不需要的大型模块
-        '--exclude-module=numpy',
         '--exclude-module=scipy',
         '--exclude-module=PIL.ImageQt',
         '--exclude-module=PyQt5',
         '--exclude-module=PyQt6',
         '--exclude-module=PySide2',
         '--exclude-module=PySide6',
-        '--add-data=icon.png:.',  # 添加图标文件
-        'directory_scanner.py'    # 主程序文件
+        '--hidden-import=pandas',    # 明确导入pandas
+        '--hidden-import=numpy',     # 明确导入numpy
+        '--hidden-import=openpyxl',  # 明确导入openpyxl
+        '--add-data=icon.png:.',     # 添加图标文件
+        'directory_scanner.py'       # 主程序文件
     ]
     
     print("📦 执行PyInstaller构建...")
