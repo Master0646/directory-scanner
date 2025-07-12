@@ -1,0 +1,60 @@
+
+name: Build Executables
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            ext: .exe
+          - os: macos-latest
+            platform: macos
+            ext: .app
+          - os: ubuntu-latest
+            platform: linux
+            ext: ""
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r requirements.txt
+    
+    - name: Build executable (Windows)
+      if: matrix.platform == 'windows'
+      run: |
+        pyinstaller --onefile --windowed --clean --noconfirm --name="目录扫描器" --icon=icon.png --distpath=dist/windows directory_scanner.py
+    
+    - name: Build executable (macOS)
+      if: matrix.platform == 'macos'
+      run: |
+        pyinstaller --onefile --windowed --clean --noconfirm --name="目录扫描器" --icon=icon.png --distpath=dist/macos directory_scanner.py
+    
+    - name: Build executable (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        pyinstaller --onefile --clean --noconfirm --name="目录扫描器" --icon=icon.png --distpath=dist/linux directory_scanner.py
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: 目录扫描器-${{ matrix.platform }}
+        path: dist/${{ matrix.platform }}/

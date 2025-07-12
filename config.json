@@ -1,0 +1,31 @@
+{
+  "app_info": {
+    "name": "目录文件扫描器",
+    "version": "1.0.0",
+    "author": "AI Assistant",
+    "description": "一个简单易用的目录文件扫描工具"
+  },
+  "ui_settings": {
+    "window_width": 800,
+    "window_height": 600,
+    "window_resizable": true,
+    "theme": "default"
+  },
+  "scan_settings": {
+    "max_depth": 3,
+    "include_hidden_files": false,
+    "follow_symlinks": false,
+    "skip_system_folders": true
+  },
+  "export_settings": {
+    "default_format": "xlsx",
+    "csv_encoding": "utf-8-sig",
+    "excel_engine": "openpyxl",
+    "include_timestamps": true
+  },
+  "performance": {
+    "use_threading": true,
+    "max_files_in_memory": 10000,
+    "progress_update_interval": 100
+  }
+}
