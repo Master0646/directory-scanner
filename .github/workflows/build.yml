@@ -41,7 +41,7 @@ jobs:
     - name: Build executable (Windows)
       if: matrix.platform == 'windows'
       run: |
-        pyinstaller --onefile --windowed --clean --noconfirm --name="目录扫描器" --icon=icon.png --distpath=dist/windows directory_scanner.py
+        pyinstaller --onefile --windowed --clean --noconfirm --name="目录扫描器" --distpath=dist/windows directory_scanner.py
     
     - name: Build executable (macOS)
       if: matrix.platform == 'macos'
