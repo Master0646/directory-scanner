@@ -174,9 +174,9 @@ python cross_platform_build.py
 
 ## 📞 联系我们
 
-- 🐛 [报告问题](https://github.com/用户名/目录文件生成器/issues)
-- 💡 [功能建议](https://github.com/用户名/目录文件生成器/issues/new?template=feature_request.md)
-- 📧 [联系邮箱](mailto:your-email@example.com)
+- 🐛 [报告问题](https://github.com/Master0646/目录文件生成器/issues)
+- 💡 [功能建议](https://github.com/Master0646/目录文件生成器/issues/new?template=feature_request.md)
+- 📧 [联系邮箱](mailto:15047831679@126.com)
 
 ---
 

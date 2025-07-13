@@ -14,13 +14,29 @@ from pathlib import Path
 import importlib.util
 import json
 
+def safe_print(text):
+    """安全的打印函数，处理编码问题"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        import sys
+        if sys.platform.startswith('win'):
+            safe_text = text.encode('ascii', 'ignore').decode('ascii')
+            if not safe_text.strip():
+                safe_text = "[Unicode content - check logs for details]"
+            print(safe_text)
+        else:
+            print(text.encode('utf-8', 'ignore').decode('utf-8'))
+    except Exception:
+        print("[Output encoding error - check logs for details]")
+
 def check_windows_environment():
     """检查Windows环境和工具
     
     Returns:
         dict: 环境检查结果
     """
-    print("🔍 检查Windows环境...")
+    safe_print("🔍 检查Windows环境...")
     results = {
         'system': platform.system(),
         'python_version': sys.version.split()[0],
@@ -31,9 +47,9 @@ def check_windows_environment():
         'antivirus_warning': False
     }
     
-    print(f"🖥️  系统: {results['system']}")
-    print(f"🐍 Python版本: {results['python_version']}")
-    print(f"🏗️  架构: {results['architecture']}")
+    safe_print(f"🖥️  系统: {results['system']}")
+    safe_print(f"🐍 Python版本: {results['python_version']}")
+    safe_print(f"🏗️  架构: {results['architecture']}")
     
     # 检查PyInstaller
     try:
@@ -42,11 +58,11 @@ def check_windows_environment():
         if result.returncode == 0:
             results['pyinstaller_installed'] = True
             results['pyinstaller_version'] = result.stdout.strip()
-            print(f"✅ PyInstaller: {results['pyinstaller_version']}")
+            safe_print(f"✅ PyInstaller: {results['pyinstaller_version']}")
         else:
-            print("❌ PyInstaller未正确安装")
+            safe_print("❌ PyInstaller未正确安装")
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        print("❌ PyInstaller未安装或无法访问")
+        safe_print("❌ PyInstaller未安装或无法访问")
     
     # 检查Windows SDK（通过查找常见路径）
     sdk_paths = [
@@ -59,11 +75,11 @@ def check_windows_environment():
     for sdk_path in sdk_paths:
         if os.path.exists(sdk_path):
             results['windows_sdk'] = True
-            print(f"✅ 找到Windows SDK: {sdk_path}")
+            safe_print(f"✅ 找到Windows SDK: {sdk_path}")
             break
     
     if not results['windows_sdk']:
-        print("⚠️ 未检测到Windows SDK")
+        safe_print("⚠️ 未检测到Windows SDK")
     
     # 检查常见的防病毒软件进程
     antivirus_processes = [
@@ -81,7 +97,7 @@ def check_windows_environment():
             for av_process in antivirus_processes:
                 if av_process.lower() in running_processes:
                     results['antivirus_warning'] = True
-                    print(f"⚠️ 检测到防病毒软件: {av_process}")
+                    safe_print(f"⚠️ 检测到防病毒软件: {av_process}")
                     break
     except:
         pass
@@ -94,7 +110,7 @@ def check_windows_dependencies():
     Returns:
         dict: 依赖检查结果
     """
-    print("\n🔍 检查Windows依赖...")
+    safe_print("\n🔍 检查Windows依赖...")
     results = {
         'missing_modules': [],
         'version_conflicts': [],
@@ -115,12 +131,12 @@ def check_windows_dependencies():
             spec = importlib.util.find_spec(module)
             if spec is None:
                 results['missing_modules'].append((module, description))
-                print(f"❌ 缺少模块: {module} ({description})")
+                safe_print(f"❌ 缺少模块: {module} ({description})")
             else:
-                print(f"✅ 模块正常: {module}")
+                safe_print(f"✅ 模块正常: {module}")
         except ImportError:
             results['missing_modules'].append((module, description))
-            print(f"❌ 导入失败: {module} ({description})")
+            safe_print(f"❌ 导入失败: {module} ({description})")
     
     # 检查可能的版本冲突
     try:
@@ -136,9 +152,9 @@ def check_windows_dependencies():
                     results['version_conflicts'].append(
                         f"PyInstaller版本过低: {version} (建议4.0+)"
                     )
-                    print(f"⚠️ PyInstaller版本过低: {version}")
+                    safe_print(f"⚠️ PyInstaller版本过低: {version}")
     except ImportError:
-        print("⚠️ 无法检查包版本")
+        safe_print("⚠️ 无法检查包版本")
     
     return results
 
@@ -148,7 +164,7 @@ def check_windows_file_permissions():
     Returns:
         dict: 权限检查结果
     """
-    print("\n🔍 检查Windows文件权限...")
+    safe_print("\n🔍 检查Windows文件权限...")
     results = {
         'write_permission': True,
         'execution_permission': True,
@@ -163,22 +179,22 @@ def check_windows_file_permissions():
         with open(test_file, 'w') as f:
             f.write("test")
         test_file.unlink()
-        print("✅ 写入权限正常")
+        safe_print("✅ 写入权限正常")
     except PermissionError:
         results['write_permission'] = False
-        print("❌ 写入权限不足")
+        safe_print("❌ 写入权限不足")
     except Exception as e:
-        print(f"⚠️ 写入权限检查失败: {e}")
+        safe_print(f"⚠️ 写入权限检查失败: {e}")
     
     # 检查临时目录访问
     import tempfile
     try:
         with tempfile.NamedTemporaryFile() as tmp:
             tmp.write(b"test")
-        print("✅ 临时目录访问正常")
+        safe_print("✅ 临时目录访问正常")
     except Exception as e:
         results['temp_access'] = False
-        print(f"❌ 临时目录访问失败: {e}")
+        safe_print(f"❌ 临时目录访问失败: {e}")
     
     return results
 
@@ -270,7 +286,7 @@ import sys
 from pathlib import Path
 
 def main():
-    print("🚀 开始Windows修复版构建...")
+    safe_print("🚀 开始Windows修复版构建...")
     
     # 基于诊断结果的构建命令
     cmd = [
@@ -299,10 +315,10 @@ def main():
     
     try:
         result = subprocess.run(cmd, check=True)
-        print("✅ 构建成功！")
+        safe_print("✅ 构建成功！")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ 构建失败: {e}")
+        safe_print(f"❌ 构建失败: {e}")
         return False
 
 if __name__ == "__main__":
@@ -318,7 +334,7 @@ if __name__ == "__main__":
 def main():
     """主函数"""
     print("=" * 60)
-    print("🪟 Windows打包问题诊断工具")
+    safe_print("🪟 Windows打包问题诊断工具")
     print("=" * 60)
     
     # 执行各项检查
@@ -330,42 +346,42 @@ def main():
     fixes = generate_windows_fixes(env_results, dep_results, perm_results)
     
     print("\n" + "=" * 60)
-    print("📋 诊断结果")
+    safe_print("📋 诊断结果")
     print("=" * 60)
     
     if not fixes:
-        print("🎉 恭喜！未发现Windows打包问题")
-        print("✅ 您的环境已准备就绪，可以直接使用 build_windows_fixed.py 进行打包")
+        safe_print("🎉 恭喜！未发现Windows打包问题")
+        safe_print("✅ 您的环境已准备就绪，可以直接使用 build_windows_fixed.py 进行打包")
     else:
-        print(f"⚠️ 发现 {len(fixes)} 个潜在问题:")
+        safe_print(f"⚠️ 发现 {len(fixes)} 个潜在问题:")
         
         high_priority = [f for f in fixes if f['priority'] == 'high']
         medium_priority = [f for f in fixes if f['priority'] == 'medium']
         
         if high_priority:
-            print("\n🔴 高优先级问题（必须解决）:")
+            safe_print("\n🔴 高优先级问题（必须解决）:")
             for i, fix in enumerate(high_priority, 1):
                 print(f"{i}. {fix['issue']}")
-                print(f"   解决方案: {fix['solution']}")
+                safe_print(f"   解决方案: {fix['solution']}")
                 if 'details' in fix:
                     for detail in fix['details']:
                         print(f"   - {detail}")
                 print()
         
         if medium_priority:
-            print("🟡 中优先级问题（建议解决）:")
+            safe_print("🟡 中优先级问题（建议解决）:")
             for i, fix in enumerate(medium_priority, 1):
                 print(f"{i}. {fix['issue']}")
-                print(f"   解决方案: {fix['solution']}")
+                safe_print(f"   解决方案: {fix['solution']}")
                 if 'details' in fix:
                     for detail in fix['details']:
                         print(f"   - {detail}")
                 print()
     
-    print("\n💡 建议的解决步骤:")
-    print("1. 解决上述高优先级问题")
-    print("2. 使用 python build_windows_fixed.py 进行打包")
-    print("3. 如果仍有问题，考虑使用GitHub Actions自动化打包")
+    safe_print("\n💡 建议的解决步骤:")
+    safe_print("1. 解决上述高优先级问题")
+    safe_print("2. 使用 python build_windows_fixed.py 进行打包")
+    safe_print("3. 如果仍有问题，考虑使用GitHub Actions自动化打包")
     
     # 保存诊断报告
     report = {
@@ -379,7 +395,7 @@ def main():
     with open(report_file, 'w', encoding='utf-8') as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
     
-    print(f"\n📄 详细报告已保存到: {report_file}")
+    safe_print(f"\n📄 详细报告已保存到: {report_file}")
 
 if __name__ == "__main__":
     main()

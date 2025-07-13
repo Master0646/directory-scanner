@@ -14,15 +14,31 @@ import time
 import threading
 import json
 
+def safe_print(text):
+    """安全的打印函数，处理编码问题"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        import sys
+        if sys.platform.startswith('win'):
+            safe_text = text.encode('ascii', 'ignore').decode('ascii')
+            if not safe_text.strip():
+                safe_text = "[Unicode content - check logs for details]"
+            print(safe_text)
+        else:
+            print(text.encode('utf-8', 'ignore').decode('utf-8'))
+    except Exception:
+        print("[Output encoding error - check logs for details]")
+
 def show_progress():
     """显示打包进度动画"""
     chars = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
     i = 0
     while not progress_done:
-        print(f"\r🔨 正在打包中 {chars[i % len(chars)]} 请耐心等待...", end="", flush=True)
+        safe_print(f"\r🔨 正在打包中 {chars[i % len(chars)]} 请耐心等待...", end="", flush=True)
         time.sleep(0.1)
         i += 1
-    print("\r✅ 打包完成！" + " " * 30)
+    safe_print("\r✅ 打包完成！" + " " * 30)
 
 def create_github_workflow():
     """创建GitHub Actions工作流文件用于自动化打包"""
@@ -251,11 +267,11 @@ def local_build():
     script_path = current_dir / "directory_scanner.py"
     
     if not script_path.exists():
-        print(f"❌ 找不到主程序文件: {script_path}")
+        safe_print(f"❌ 找不到主程序文件: {script_path}")
         return False
     
     system = platform.system()
-    print(f"🖥️  当前系统: {system}")
+    safe_print(f"🖥️  当前系统: {system}")
     
     # 检查图标文件
     icon_path = None
@@ -263,11 +279,11 @@ def local_build():
         test_path = current_dir / icon_name
         if test_path.exists():
             icon_path = test_path
-            print(f"✅ 找到图标文件: {icon_path.name}")
+            safe_print(f"✅ 找到图标文件: {icon_path.name}")
             break
     
     if not icon_path:
-        print("⚠️ 未找到图标文件，将使用默认图标")
+        safe_print("⚠️ 未找到图标文件，将使用默认图标")
     
     # 根据系统选择打包参数
     if system == "Windows":
@@ -310,8 +326,8 @@ def local_build():
     
     cmd.append(str(script_path))
     
-    print(f"\n🚀 开始{system}平台打包...")
-    print(f"📝 目标目录: {dist_path}")
+    safe_print(f"\n🚀 开始{system}平台打包...")
+    safe_print(f"📝 目标目录: {dist_path}")
     
     # 启动进度显示线程
     progress_thread = threading.Thread(target=show_progress)
@@ -323,7 +339,7 @@ def local_build():
         progress_done = True
         
         if result.returncode == 0:
-            print(f"\n🎉 {system}平台打包成功！")
+            safe_print(f"\n🎉 {system}平台打包成功！")
             
             # 查找生成的文件
             dist_dir = current_dir / dist_path.split('/')[0] / dist_path.split('/')[1]
@@ -331,39 +347,39 @@ def local_build():
                 files = list(dist_dir.glob("*"))
                 if files:
                     for file in files:
-                        print(f"📦 生成文件: {file}")
+                        safe_print(f"📦 生成文件: {file}")
                         if file.is_file() and not file.name.startswith('.'):
                             size_mb = file.stat().st_size / (1024*1024)
-                            print(f"📏 文件大小: {size_mb:.1f} MB")
+                            safe_print(f"📏 文件大小: {size_mb:.1f} MB")
             
             return True
         else:
             progress_done = True
-            print(f"\n❌ {system}平台打包失败")
-            print(f"错误信息: {result.stderr}")
+            safe_print(f"\n❌ {system}平台打包失败")
+            safe_print(f"错误信息: {result.stderr}")
             return False
             
     except Exception as e:
         progress_done = True
-        print(f"\n❌ 打包过程出错: {e}")
+        safe_print(f"\n❌ 打包过程出错: {e}")
         return False
 
 def main():
     """主函数"""
     print("=" * 70)
-    print("🌍 目录扫描器 - 跨平台打包脚本")
+    safe_print("🌍 目录扫描器 - 跨平台打包脚本")
     print("=" * 70)
     
     system = platform.system()
-    print(f"🖥️  当前系统: {system}")
-    print(f"🐍 Python版本: {sys.version.split()[0]}")
+    safe_print(f"🖥️  当前系统: {system}")
+    safe_print(f"🐍 Python版本: {sys.version.split()[0]}")
     
-    print("\n📋 可用选项:")
-    print("1. 本地打包 (只能生成当前平台的可执行文件)")
-    print("2. 创建GitHub Actions工作流 (推荐)")
-    print("3. 创建Docker构建文件")
-    print("4. 查看详细说明")
-    print("5. 退出")
+    safe_print("\n📋 可用选项:")
+    safe_print("1. 本地打包 (只能生成当前平台的可执行文件)")
+    safe_print("2. 创建GitHub Actions工作流 (推荐)")
+    safe_print("3. 创建Docker构建文件")
+    safe_print("4. 查看详细说明")
+    safe_print("5. 退出")
     
     try:
         choice = input("\n请选择操作 (1-5): ").strip()
@@ -371,44 +387,44 @@ def main():
         if choice == "1":
             print("\n" + "="*50)
             if local_build():
-                print(f"\n🎊 恭喜！{system}平台打包完成")
+                safe_print(f"\n🎊 恭喜！{system}平台打包完成")
             else:
-                print("\n😞 打包失败")
+                safe_print("\n😞 打包失败")
                 
         elif choice == "2":
-            print("\n📝 创建GitHub Actions工作流...")
+            safe_print("\n📝 创建GitHub Actions工作流...")
             workflow_file = create_github_workflow()
-            print(f"✅ 已创建: {workflow_file}")
-            print("\n📋 下一步:")
-            print("1. 将代码推送到GitHub仓库")
-            print("2. 在仓库的Actions页面查看构建进度")
-            print("3. 构建完成后下载artifacts")
+            safe_print(f"✅ 已创建: {workflow_file}")
+            safe_print("\n📋 下一步:")
+            safe_print("1. 将代码推送到GitHub仓库")
+            safe_print("2. 在仓库的Actions页面查看构建进度")
+            safe_print("3. 构建完成后下载artifacts")
             
         elif choice == "3":
-            print("\n🐳 创建Docker构建文件...")
+            safe_print("\n🐳 创建Docker构建文件...")
             dockerfile, compose_file = create_docker_build()
-            print(f"✅ 已创建: {dockerfile}")
-            print(f"✅ 已创建: {compose_file}")
-            print("\n📋 使用方法:")
+            safe_print(f"✅ 已创建: {dockerfile}")
+            safe_print(f"✅ 已创建: {compose_file}")
+            safe_print("\n📋 使用方法:")
             print("docker-compose up build-windows")
             print("docker-compose up build-linux")
             
         elif choice == "4":
-            print("\n📖 创建详细说明文档...")
+            safe_print("\n📖 创建详细说明文档...")
             readme_file = create_build_instructions()
-            print(f"✅ 已创建: {readme_file}")
-            print("\n请查看该文件了解详细的跨平台打包方法")
+            safe_print(f"✅ 已创建: {readme_file}")
+            safe_print("\n请查看该文件了解详细的跨平台打包方法")
             
         elif choice == "5":
-            print("\n👋 再见！")
+            safe_print("\n👋 再见！")
             
         else:
-            print("\n❌ 无效选择")
+            safe_print("\n❌ 无效选择")
             
     except KeyboardInterrupt:
-        print("\n\n👋 再见！")
+        safe_print("\n\n👋 再见！")
     except Exception as e:
-        print(f"\n❌ 发生错误: {e}")
+        safe_print(f"\n❌ 发生错误: {e}")
 
 if __name__ == "__main__":
     # 全局变量

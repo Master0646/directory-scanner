@@ -38,6 +38,14 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
     
+    - name: Set encoding for Windows
+      if: runner.os == 'Windows'
+      run: |
+        echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
+        echo "PYTHONUTF8=1" >> $GITHUB_ENV
+        echo "PYTHONLEGACYWINDOWSSTDIO=utf-8" >> $GITHUB_ENV
+      shell: bash
+    
     - name: 安装依赖
       run: |
         python -m pip install --upgrade pip

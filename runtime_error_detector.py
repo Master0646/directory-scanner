@@ -353,24 +353,42 @@ def safe_main():
         detector = RuntimeErrorDetector()
         detector.run_comprehensive_test()
     except Exception as e:
-        print(f"❌ 运行时错误检测器本身出现问题: {e}")
-        print(traceback.format_exc())
+        safe_print(f"Runtime error detector encountered an issue: {e}")
+        safe_print(traceback.format_exc())
         
         if detector:
             detector.logger.error(f"检测器错误: {e}")
             detector.logger.error(traceback.format_exc())
 
+def safe_print(text):
+    """安全的打印函数，处理编码问题"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        # 在Windows环境下，如果无法显示Unicode字符，使用ASCII替代
+        import sys
+        if sys.platform.startswith('win'):
+            # 移除emoji和特殊字符，保留基本信息
+            safe_text = text.encode('ascii', 'ignore').decode('ascii')
+            if not safe_text.strip():
+                safe_text = "[Unicode content - check logs for details]"
+            print(safe_text)
+        else:
+            print(text.encode('utf-8', 'ignore').decode('utf-8'))
+    except Exception:
+        print("[Output encoding error - check logs for details]")
+
 def main():
     """主函数"""
-    print("🔍 运行时错误检测器")
-    print("专门检测打包后应用的运行时问题")
-    print("=" * 50)
+    safe_print("Runtime Error Detector")
+    safe_print("Detecting runtime issues in packaged applications")
+    safe_print("=" * 50)
     
     safe_main()
     
-    print("\n✅ 检测完成！")
-    print("📄 详细日志已保存到 logs/ 目录")
-    print("💡 建议查看日志文件获取完整信息")
+    safe_print("\nDetection completed!")
+    safe_print("Detailed logs saved to logs/ directory")
+    safe_print("Please check log files for complete information")
 
 if __name__ == "__main__":
     main()

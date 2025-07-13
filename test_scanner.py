@@ -11,13 +11,29 @@ import tempfile
 import shutil
 from pathlib import Path
 
+def safe_print(text):
+    """安全的打印函数，处理编码问题"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        import sys
+        if sys.platform.startswith('win'):
+            safe_text = text.encode('ascii', 'ignore').decode('ascii')
+            if not safe_text.strip():
+                safe_text = "[Unicode content - check logs for details]"
+            print(safe_text)
+        else:
+            print(text.encode('utf-8', 'ignore').decode('utf-8'))
+    except Exception:
+        print("[Output encoding error - check logs for details]")
+
 def create_test_directory():
     """创建测试目录结构"""
     # 创建临时目录
     test_dir = tempfile.mkdtemp(prefix="scanner_test_")
     test_path = Path(test_dir)
     
-    print(f"创建测试目录: {test_path}")
+    safe_print(f"创建测试目录: {test_path}")
     
     # 创建测试文件和文件夹
     test_structure = {
@@ -55,61 +71,61 @@ def create_test_directory():
 
 def test_imports():
     """测试依赖包导入"""
-    print("\n=== 测试依赖包导入 ===")
+    safe_print("\n=== 测试依赖包导入 ===")
     
     try:
         import tkinter as tk
-        print("✓ tkinter 导入成功")
+        safe_print("✓ tkinter 导入成功")
     except ImportError as e:
-        print(f"✗ tkinter 导入失败: {e}")
+        safe_print(f"✗ tkinter 导入失败: {e}")
         return False
     
     try:
         import pandas as pd
-        print(f"✓ pandas 导入成功 (版本: {pd.__version__})")
+        safe_print(f"✓ pandas 导入成功 (版本: {pd.__version__})")
     except ImportError as e:
-        print(f"✗ pandas 导入失败: {e}")
+        safe_print(f"✗ pandas 导入失败: {e}")
         return False
     
     try:
         import openpyxl
-        print(f"✓ openpyxl 导入成功 (版本: {openpyxl.__version__})")
+        safe_print(f"✓ openpyxl 导入成功 (版本: {openpyxl.__version__})")
     except ImportError as e:
-        print(f"✗ openpyxl 导入失败: {e}")
+        safe_print(f"✗ openpyxl 导入失败: {e}")
         return False
     
     return True
 
 def test_directory_scanner():
     """测试目录扫描器类"""
-    print("\n=== 测试目录扫描器 ===")
+    safe_print("\n=== 测试目录扫描器 ===")
     
     try:
         # 导入主程序
         sys.path.insert(0, str(Path(__file__).parent))
         from directory_scanner import DirectoryScanner
-        print("✓ DirectoryScanner 类导入成功")
+        safe_print("✓ DirectoryScanner 类导入成功")
         
         # 创建测试目录
         test_dir = create_test_directory()
-        print(f"✓ 测试目录创建成功: {test_dir}")
+        safe_print(f"✓ 测试目录创建成功: {test_dir}")
         
         # 测试基本功能（不启动GUI）
-        print("✓ 基本功能测试通过")
+        safe_print("✓ 基本功能测试通过")
         
         # 清理测试目录
         shutil.rmtree(test_dir)
-        print("✓ 测试目录清理完成")
+        safe_print("✓ 测试目录清理完成")
         
         return True
         
     except Exception as e:
-        print(f"✗ 测试失败: {e}")
+        safe_print(f"✗ 测试失败: {e}")
         return False
 
 def test_file_operations():
     """测试文件操作功能"""
-    print("\n=== 测试文件操作 ===")
+    safe_print("\n=== 测试文件操作 ===")
     
     try:
         # 创建测试目录
@@ -123,7 +139,7 @@ def test_file_operations():
             dir_count += len(dirs)
             file_count += len(files)
         
-        print(f"✓ 扫描到 {file_count} 个文件, {dir_count} 个文件夹")
+        safe_print(f"✓ 扫描到 {file_count} 个文件, {dir_count} 个文件夹")
         
         # 测试pandas数据处理
         import pandas as pd
@@ -138,26 +154,26 @@ def test_file_operations():
         # 测试CSV导出
         csv_path = test_dir / "test_export.csv"
         df.to_csv(csv_path, index=False, encoding='utf-8-sig')
-        print(f"✓ CSV导出测试成功: {csv_path}")
+        safe_print(f"✓ CSV导出测试成功: {csv_path}")
         
         # 测试Excel导出
         excel_path = test_dir / "test_export.xlsx"
         df.to_excel(excel_path, index=False, engine='openpyxl')
-        print(f"✓ Excel导出测试成功: {excel_path}")
+        safe_print(f"✓ Excel导出测试成功: {excel_path}")
         
         # 清理测试目录
         shutil.rmtree(test_dir)
-        print("✓ 文件操作测试完成")
+        safe_print("✓ 文件操作测试完成")
         
         return True
         
     except Exception as e:
-        print(f"✗ 文件操作测试失败: {e}")
+        safe_print(f"✗ 文件操作测试失败: {e}")
         return False
 
 def test_gui_creation():
     """测试GUI创建（不显示窗口）"""
-    print("\n=== 测试GUI创建 ===")
+    safe_print("\n=== 测试GUI创建 ===")
     
     try:
         import tkinter as tk
@@ -171,28 +187,28 @@ def test_gui_creation():
         from directory_scanner import DirectoryScanner
         
         app = DirectoryScanner(root)
-        print("✓ GUI组件创建成功")
+        safe_print("✓ GUI组件创建成功")
         
         # 测试基本属性
         assert hasattr(app, 'tree'), "缺少tree属性"
         assert hasattr(app, 'directory_var'), "缺少directory_var属性"
         assert hasattr(app, 'directory_data'), "缺少directory_data属性"
-        print("✓ 基本属性检查通过")
+        safe_print("✓ 基本属性检查通过")
         
         # 销毁窗口
         root.destroy()
-        print("✓ GUI测试完成")
+        safe_print("✓ GUI测试完成")
         
         return True
         
     except Exception as e:
-        print(f"✗ GUI测试失败: {e}")
+        safe_print(f"✗ GUI测试失败: {e}")
         return False
 
 def main():
     """主测试函数"""
     print("=" * 60)
-    print("目录扫描器 - 功能测试")
+    safe_print("目录扫描器 - 功能测试")
     print("=" * 60)
     
     tests = [
@@ -206,27 +222,27 @@ def main():
     total = len(tests)
     
     for test_name, test_func in tests:
-        print(f"\n正在运行: {test_name}")
+        safe_print(f"\n正在运行: {test_name}")
         try:
             if test_func():
                 passed += 1
-                print(f"✓ {test_name} 测试通过")
+                safe_print(f"✓ {test_name} 测试通过")
             else:
-                print(f"✗ {test_name} 测试失败")
+                safe_print(f"✗ {test_name} 测试失败")
         except Exception as e:
-            print(f"✗ {test_name} 测试异常: {e}")
+            safe_print(f"✗ {test_name} 测试异常: {e}")
     
     print("\n" + "=" * 60)
-    print(f"测试结果: {passed}/{total} 通过")
+    safe_print(f"测试结果: {passed}/{total} 通过")
     
     if passed == total:
-        print("🎉 所有测试通过！程序可以正常运行")
-        print("\n下一步:")
-        print("1. 运行 python directory_scanner.py 启动程序")
-        print("2. 运行 python build.py 打包程序")
+        safe_print("🎉 所有测试通过！程序可以正常运行")
+        safe_print("\n下一步:")
+        safe_print("1. 运行 python directory_scanner.py 启动程序")
+        safe_print("2. 运行 python build.py 打包程序")
     else:
-        print("❌ 部分测试失败，请检查依赖包安装")
-        print("\n建议执行:")
+        safe_print("❌ 部分测试失败，请检查依赖包安装")
+        safe_print("\n建议执行:")
         print("pip install -r requirements.txt")
     
     print("=" * 60)

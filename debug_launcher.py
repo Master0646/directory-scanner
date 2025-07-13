@@ -18,9 +18,9 @@ sys.path.insert(0, os.getcwd())
 
 if __name__ == "__main__":
     try:
-        print("🐛 调试模式启动...")
-        print(f"📁 工作目录: {os.getcwd()}")
-        print(f"🐍 Python版本: {sys.version}")
+        safe_print("🐛 调试模式启动...")
+        safe_print(f"📁 工作目录: {os.getcwd()}")
+        safe_print(f"🐍 Python版本: {sys.version}")
         print("-" * 50)
         
         # 导入并运行主程序
@@ -28,11 +28,28 @@ if __name__ == "__main__":
         directory_scanner.main()
         
     except ImportError as e:
-        print(f"❌ 导入错误: {e}")
-        print("请确保所有依赖已安装: pip install -r requirements.txt")
+        safe_print(f"❌ 导入错误: {e}")
+        safe_print("请确保所有依赖已安装: pip install -r requirements.txt")
     except Exception as e:
-        print(f"❌ 运行错误: {e}")
+        safe_print(f"❌ 运行错误: {e}")
         import traceback
         traceback.print_exc()
     finally:
-        print("\n🔚 调试会话结束")
+        safe_print("\n🔚 调试会话结束")
+
+def safe_print(text):
+    """安全的打印函数，处理编码问题"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        import sys
+        if sys.platform.startswith('win'):
+            safe_text = text.encode('ascii', 'ignore').decode('ascii')
+            if not safe_text.strip():
+                safe_text = "[Unicode content - check logs for details]"
+            print(safe_text)
+        else:
+            print(text.encode('utf-8', 'ignore').decode('utf-8'))
+    except Exception:
+        print("[Output encoding error - check logs for details]")
+

@@ -13,15 +13,31 @@ from pathlib import Path
 import time
 import threading
 
+def safe_print(text):
+    """安全的打印函数，处理编码问题"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        import sys
+        if sys.platform.startswith('win'):
+            safe_text = text.encode('ascii', 'ignore').decode('ascii')
+            if not safe_text.strip():
+                safe_text = "[Unicode content - check logs for details]"
+            print(safe_text)
+        else:
+            print(text.encode('utf-8', 'ignore').decode('utf-8'))
+    except Exception:
+        print("[Output encoding error - check logs for details]")
+
 def show_progress():
     """显示打包进度动画"""
     chars = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
     i = 0
     while not progress_done:
-        print(f"\r🔨 正在打包中 {chars[i % len(chars)]} 请耐心等待...", end="", flush=True)
+        safe_print(f"\r🔨 正在打包中 {chars[i % len(chars)]} 请耐心等待...", end="", flush=True)
         time.sleep(0.1)
         i += 1
-    print("\r✅ 打包完成！" + " " * 30)
+    safe_print("\r✅ 打包完成！" + " " * 30)
 
 def create_version_info():
     """创建Windows版本信息文件"""
@@ -86,7 +102,7 @@ def windows_build():
     script_path = current_dir / "directory_scanner.py"
     
     if not script_path.exists():
-        print(f"❌ 找不到主程序文件: {script_path}")
+        safe_print(f"❌ 找不到主程序文件: {script_path}")
         return False
     
     # 检查图标文件
@@ -95,14 +111,14 @@ def windows_build():
         test_path = current_dir / icon_name
         if test_path.exists():
             icon_path = test_path
-            print(f"✅ 找到图标文件: {icon_path.name}")
+            safe_print(f"✅ 找到图标文件: {icon_path.name}")
             break
     
     if not icon_path:
-        print("⚠️ 未找到图标文件，将使用默认图标")
+        safe_print("⚠️ 未找到图标文件，将使用默认图标")
     
     # 创建版本信息文件
-    print("📝 创建Windows版本信息文件...")
+    safe_print("📝 创建Windows版本信息文件...")
     version_file = create_version_info()
     
     # Windows优化的打包命令
@@ -158,13 +174,13 @@ def windows_build():
     # 添加主脚本
     cmd.append(str(script_path))
     
-    print("\n🚀 开始Windows平台打包...")
-    print(f"📝 执行命令: {' '.join(cmd[:8])}... (已简化显示)")
-    print("\n💡 提示: Windows exe打包需要较长时间（3-8分钟）")
-    print("   - 正在分析依赖关系")
-    print("   - 正在收集模块文件")
-    print("   - 正在生成exe文件")
-    print("   - 正在添加版本信息")
+    safe_print("\n🚀 开始Windows平台打包...")
+    safe_print(f"📝 执行命令: {' '.join(cmd[:8])}... (已简化显示)")
+    safe_print("\n💡 提示: Windows exe打包需要较长时间（3-8分钟）")
+    safe_print("   - 正在分析依赖关系")
+    safe_print("   - 正在收集模块文件")
+    safe_print("   - 正在生成exe文件")
+    safe_print("   - 正在添加版本信息")
     print()
     
     # 启动进度显示线程
@@ -178,7 +194,7 @@ def windows_build():
         progress_done = True
         
         if result.returncode == 0:
-            print("\n🎉 Windows exe打包成功！")
+            safe_print("\n🎉 Windows exe打包成功！")
             
             # 查找生成的文件
             dist_dir = current_dir / "dist" / "windows"
@@ -186,43 +202,43 @@ def windows_build():
                 files = list(dist_dir.glob("*.exe"))
                 if files:
                     for file in files:
-                        print(f"📦 生成文件: {file}")
+                        safe_print(f"📦 生成文件: {file}")
                         size_mb = file.stat().st_size / (1024*1024)
-                        print(f"📏 文件大小: {size_mb:.1f} MB")
+                        safe_print(f"📏 文件大小: {size_mb:.1f} MB")
                 
-                print("\n✨ Windows使用说明:")
-                print("1. exe文件位于 dist/windows/ 目录")
-                print("2. 双击即可运行，无需Python环境")
-                print("3. 可以复制到其他Windows电脑使用")
-                print("4. 支持Windows 7/8/10/11")
+                safe_print("\n✨ Windows使用说明:")
+                safe_print("1. exe文件位于 dist/windows/ 目录")
+                safe_print("2. 双击即可运行，无需Python环境")
+                safe_print("3. 可以复制到其他Windows电脑使用")
+                safe_print("4. 支持Windows 7/8/10/11")
                 
                 # 清理版本信息文件
                 if version_file.exists():
                     version_file.unlink()
-                    print("🧹 已清理临时版本信息文件")
+                    safe_print("🧹 已清理临时版本信息文件")
                 
                 return True
             else:
-                print("❌ 未找到生成的exe文件")
+                safe_print("❌ 未找到生成的exe文件")
                 return False
         else:
             progress_done = True
-            print("\n❌ Windows打包失败")
-            print(f"错误信息: {result.stderr}")
-            print("\n🔧 可能的解决方案:")
-            print("1. 确保在Windows系统上运行此脚本")
-            print("2. 检查PyInstaller版本: pip install --upgrade pyinstaller")
-            print("3. 安装Windows SDK工具")
-            print("4. 检查防病毒软件是否阻止了打包")
+            safe_print("\n❌ Windows打包失败")
+            safe_print(f"错误信息: {result.stderr}")
+            safe_print("\n🔧 可能的解决方案:")
+            safe_print("1. 确保在Windows系统上运行此脚本")
+            safe_print("2. 检查PyInstaller版本: pip install --upgrade pyinstaller")
+            safe_print("3. 安装Windows SDK工具")
+            safe_print("4. 检查防病毒软件是否阻止了打包")
             return False
             
     except KeyboardInterrupt:
         progress_done = True
-        print("\n⚠️ 用户取消打包")
+        safe_print("\n⚠️ 用户取消打包")
         return False
     except Exception as e:
         progress_done = True
-        print(f"\n❌ 打包过程出错: {e}")
+        safe_print(f"\n❌ 打包过程出错: {e}")
         return False
     finally:
         # 确保清理临时文件
@@ -232,20 +248,20 @@ def windows_build():
 def main():
     """主函数"""
     print("=" * 60)
-    print("🪟 目录扫描器 - Windows平台打包脚本")
+    safe_print("🪟 目录扫描器 - Windows平台打包脚本")
     print("=" * 60)
     
     system = platform.system()
-    print(f"🖥️  当前系统: {system}")
-    print(f"🐍 Python版本: {sys.version.split()[0]}")
+    safe_print(f"🖥️  当前系统: {system}")
+    safe_print(f"🐍 Python版本: {sys.version.split()[0]}")
     
     if system == "Windows":
-        print("✅ 检测到Windows系统，开始打包")
+        safe_print("✅ 检测到Windows系统，开始打包")
     else:
-        print("⚠️ 当前不是Windows系统，但仍可尝试交叉编译")
+        safe_print("⚠️ 当前不是Windows系统，但仍可尝试交叉编译")
         choice = input("是否继续？(y/n): ").lower().strip()
         if choice not in ['y', 'yes', '是']:
-            print("👋 已取消打包")
+            safe_print("👋 已取消打包")
             return
     
     # 检查PyInstaller
@@ -253,19 +269,19 @@ def main():
         result = subprocess.run(["pyinstaller", "--version"], 
                               capture_output=True, text=True)
         if result.returncode == 0:
-            print(f"✅ PyInstaller已安装: {result.stdout.strip()}")
+            safe_print(f"✅ PyInstaller已安装: {result.stdout.strip()}")
         else:
-            print("❌ PyInstaller未安装，正在安装...")
+            safe_print("❌ PyInstaller未安装，正在安装...")
             subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"])
     except FileNotFoundError:
-        print("❌ PyInstaller未安装，正在安装...")
+        safe_print("❌ PyInstaller未安装，正在安装...")
         subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"])
     
     print("\n" + "="*60)
     
     # 开始打包
     if windows_build():
-        print("\n🎊 恭喜！Windows exe打包完成")
+        safe_print("\n🎊 恭喜！Windows exe打包完成")
         
         # 询问是否清理临时文件
         try:
@@ -275,15 +291,15 @@ def main():
                 build_dir = Path(__file__).parent / "build" / "windows"
                 if build_dir.exists():
                     shutil.rmtree(build_dir)
-                    print("✅ 临时文件已清理")
+                    safe_print("✅ 临时文件已清理")
         except KeyboardInterrupt:
-            print("\n👋 再见！")
+            safe_print("\n👋 再见！")
     else:
-        print("\n😞 打包失败，请检查错误信息")
-        print("\n💡 提示: 如果在macOS上打包Windows版本，建议:")
-        print("1. 使用Windows虚拟机")
-        print("2. 使用GitHub Actions自动化打包")
-        print("3. 使用Docker容器")
+        safe_print("\n😞 打包失败，请检查错误信息")
+        safe_print("\n💡 提示: 如果在macOS上打包Windows版本，建议:")
+        safe_print("1. 使用Windows虚拟机")
+        safe_print("2. 使用GitHub Actions自动化打包")
+        safe_print("3. 使用Docker容器")
 
 if __name__ == "__main__":
     # 全局变量

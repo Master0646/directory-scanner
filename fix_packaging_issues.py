@@ -21,7 +21,23 @@ class PackagingDiagnostic:
     用于检测和修复PyInstaller打包过程中的常见问题
     """
     
-    def __init__(self):
+    def safe_print(text):
+    """安全的打印函数，处理编码问题"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        import sys
+        if sys.platform.startswith('win'):
+            safe_text = text.encode('ascii', 'ignore').decode('ascii')
+            if not safe_text.strip():
+                safe_text = "[Unicode content - check logs for details]"
+            print(safe_text)
+        else:
+            print(text.encode('utf-8', 'ignore').decode('utf-8'))
+    except Exception:
+        print("[Output encoding error - check logs for details]")
+
+def __init__(self):
         """初始化诊断工具"""
         self.issues_found = []
         self.fixes_applied = []
@@ -33,7 +49,7 @@ class PackagingDiagnostic:
         Returns:
             bool: 是否发现并修复了问题
         """
-        print("🔍 开始打包问题诊断...")
+        safe_print("🔍 开始打包问题诊断...")
         print("=" * 50)
         
         # 1. 检查基础环境
@@ -64,11 +80,11 @@ class PackagingDiagnostic:
         
         检查Python版本、PyInstaller版本等基础信息
         """
-        print("📋 检查基础环境...")
+        safe_print("📋 检查基础环境...")
         
         # Python版本检查
         python_version = sys.version_info
-        print(f"🐍 Python版本: {python_version.major}.{python_version.minor}.{python_version.micro}")
+        safe_print(f"🐍 Python版本: {python_version.major}.{python_version.minor}.{python_version.micro}")
         
         if python_version < (3, 8):
             self.issues_found.append({
@@ -83,7 +99,7 @@ class PackagingDiagnostic:
             result = subprocess.run(['pyinstaller', '--version'], 
                                   capture_output=True, text=True, check=True)
             pyinstaller_version = result.stdout.strip()
-            print(f"📦 PyInstaller版本: {pyinstaller_version}")
+            safe_print(f"📦 PyInstaller版本: {pyinstaller_version}")
             
             # 检查是否是已知有问题的版本
             if "5.0" in pyinstaller_version:
@@ -106,7 +122,7 @@ class PackagingDiagnostic:
         
         分析主程序的导入语句，识别可能的隐藏导入问题
         """
-        print("📥 检查导入问题...")
+        safe_print("📥 检查导入问题...")
         
         if not os.path.exists(self.main_script):
             self.issues_found.append({
@@ -155,7 +171,7 @@ class PackagingDiagnostic:
                         imports.append(module)
                         
         except Exception as e:
-            print(f"⚠️  分析导入语句时出错: {e}")
+            safe_print(f"⚠️  分析导入语句时出错: {e}")
             
         return imports
     
@@ -195,7 +211,7 @@ class PackagingDiagnostic:
         
         检查相对路径、资源文件等可能的路径问题
         """
-        print("📁 检查文件路径问题...")
+        safe_print("📁 检查文件路径问题...")
         
         # 检查是否使用了相对路径
         try:
@@ -228,14 +244,14 @@ class PackagingDiagnostic:
                 })
                 
         except Exception as e:
-            print(f"⚠️  检查文件路径时出错: {e}")
+            safe_print(f"⚠️  检查文件路径时出错: {e}")
     
     def check_hidden_imports(self):
         """检查隐藏导入配置
         
         验证当前构建脚本中的隐藏导入是否完整
         """
-        print("🔍 检查隐藏导入配置...")
+        safe_print("🔍 检查隐藏导入配置...")
         
         # 读取当前构建脚本
         build_script = "build_macos_optimized.py"
@@ -272,14 +288,14 @@ class PackagingDiagnostic:
                 })
                 
         except Exception as e:
-            print(f"⚠️  检查隐藏导入时出错: {e}")
+            safe_print(f"⚠️  检查隐藏导入时出错: {e}")
     
     def check_data_files(self):
         """检查数据文件配置
         
         检查是否正确配置了数据文件的打包
         """
-        print("📄 检查数据文件配置...")
+        safe_print("📄 检查数据文件配置...")
         
         # 检查可能需要打包的数据文件
         data_files = {
@@ -315,7 +331,7 @@ class PackagingDiagnostic:
         
         基于发现的问题生成一个改进的构建脚本
         """
-        print("🔧 生成修复后的构建脚本...")
+        safe_print("🔧 生成修复后的构建脚本...")
         
         fixed_script_content = '''#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -336,13 +352,13 @@ def build_fixed_macos():
     
     包含所有必要的修复参数
     """
-    print("🚀 开始构建修复版macOS应用程序...")
+    safe_print("🚀 开始构建修复版macOS应用程序...")
     
     # 清理之前的构建文件
     build_dirs = ['build', 'dist']
     for dir_name in build_dirs:
         if os.path.exists(dir_name):
-            print(f"🧹 清理目录: {dir_name}")
+            safe_print(f"🧹 清理目录: {dir_name}")
             shutil.rmtree(dir_name)
     
     # 增强的构建命令参数
@@ -428,43 +444,43 @@ def build_fixed_macos():
     for data_file in extra_data_files:
         if os.path.exists(data_file):
             cmd.insert(-1, f'--add-data={data_file}:.')
-            print(f"📄 添加数据文件: {data_file}")
+            safe_print(f"📄 添加数据文件: {data_file}")
     
-    print("📦 执行增强版PyInstaller构建...")
-    print(f"命令参数数量: {len(cmd)}")
+    safe_print("📦 执行增强版PyInstaller构建...")
+    safe_print(f"命令参数数量: {len(cmd)}")
     
     try:
         # 执行构建
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print("✅ 构建成功！")
+        safe_print("✅ 构建成功！")
         
         # 检查构建结果
         app_path = Path('dist/目录扫描器.app')
         if app_path.exists():
-            print(f"📱 应用程序已生成: {app_path.absolute()}")
-            print("\n🎉 修复版构建完成！")
-            print("\n🔧 应用的修复:")
-            print("• 增加了完整的隐藏导入配置")
-            print("• 包含了所有必要的数据文件")
-            print("• 优化了模块收集策略")
-            print("• 排除了不必要的大型模块")
+            safe_print(f"📱 应用程序已生成: {app_path.absolute()}")
+            safe_print("\n🎉 修复版构建完成！")
+            safe_print("\n🔧 应用的修复:")
+            safe_print("• 增加了完整的隐藏导入配置")
+            safe_print("• 包含了所有必要的数据文件")
+            safe_print("• 优化了模块收集策略")
+            safe_print("• 排除了不必要的大型模块")
             
         else:
-            print("❌ 未找到生成的应用程序")
+            safe_print("❌ 未找到生成的应用程序")
             
     except subprocess.CalledProcessError as e:
-        print(f"❌ 构建失败: {e}")
+        safe_print(f"❌ 构建失败: {e}")
         if e.stderr:
-            print(f"错误输出: {e.stderr}")
+            safe_print(f"错误输出: {e.stderr}")
         return False
     except Exception as e:
-        print(f"❌ 构建过程中发生错误: {e}")
+        safe_print(f"❌ 构建过程中发生错误: {e}")
         return False
     
     return True
 
 if __name__ == "__main__":
-    print("🔧 修复版macOS应用程序构建工具")
+    safe_print("🔧 修复版macOS应用程序构建工具")
     print("=" * 50)
     build_fixed_macos()
 '''
@@ -474,7 +490,7 @@ if __name__ == "__main__":
             f.write(fixed_script_content)
             
         self.fixes_applied.append(f"生成修复版构建脚本: {fixed_script_path}")
-        print(f"✅ 修复版构建脚本已生成: {fixed_script_path}")
+        safe_print(f"✅ 修复版构建脚本已生成: {fixed_script_path}")
     
     def provide_solutions(self):
         """提供解决方案总结
@@ -482,18 +498,18 @@ if __name__ == "__main__":
         根据发现的问题提供具体的解决方案
         """
         print("\n" + "=" * 50)
-        print("📋 诊断结果总结")
+        safe_print("📋 诊断结果总结")
         print("=" * 50)
         
         if not self.issues_found:
-            print("✅ 未发现明显的打包问题！")
-            print("\n💡 如果仍有问题，建议:")
-            print("1. 使用修复版构建脚本: python build_macos_fixed.py")
-            print("2. 检查运行时错误日志")
-            print("3. 在不同环境中测试")
+            safe_print("✅ 未发现明显的打包问题！")
+            safe_print("\n💡 如果仍有问题，建议:")
+            safe_print("1. 使用修复版构建脚本: python build_macos_fixed.py")
+            safe_print("2. 检查运行时错误日志")
+            safe_print("3. 在不同环境中测试")
             return
             
-        print(f"⚠️  发现 {len(self.issues_found)} 个潜在问题:")
+        safe_print(f"⚠️  发现 {len(self.issues_found)} 个潜在问题:")
         print()
         
         # 按类型分组显示问题
@@ -515,32 +531,32 @@ if __name__ == "__main__":
         
         for issue_type, issues in issues_by_type.items():
             icon = type_icons.get(issue_type, '❓')
-            print(f"{icon} {issue_type.upper()} 问题:")
+            safe_print(f"{icon} {issue_type.upper()} 问题:")
             
             for i, issue in enumerate(issues, 1):
                 print(f"  {i}. {issue['issue']}")
-                print(f"     描述: {issue['description']}")
-                print(f"     解决: {issue['fix']}")
+                safe_print(f"     描述: {issue['description']}")
+                safe_print(f"     解决: {issue['fix']}")
                 print()
         
-        print("🚀 推荐解决方案:")
-        print("1. 使用生成的修复版构建脚本:")
+        safe_print("🚀 推荐解决方案:")
+        safe_print("1. 使用生成的修复版构建脚本:")
         print("   python build_macos_fixed.py")
         print()
-        print("2. 如果问题仍然存在，尝试调试构建:")
+        safe_print("2. 如果问题仍然存在，尝试调试构建:")
         print("   python fix_packaging_issues.py --debug-build")
         print()
-        print("3. 检查运行时错误:")
-        print("   - 在终端中运行打包后的应用")
-        print("   - 查看详细的错误信息")
-        print("   - 检查缺少的依赖或文件")
+        safe_print("3. 检查运行时错误:")
+        safe_print("   - 在终端中运行打包后的应用")
+        safe_print("   - 查看详细的错误信息")
+        safe_print("   - 检查缺少的依赖或文件")
 
 def debug_build():
     """调试模式构建
     
     使用详细输出进行构建，便于问题定位
     """
-    print("🐛 调试模式构建...")
+    safe_print("🐛 调试模式构建...")
     
     cmd = [
         'pyinstaller',
@@ -563,17 +579,17 @@ def debug_build():
         'directory_scanner.py'
     ]
     
-    print("执行调试构建...")
+    safe_print("执行调试构建...")
     try:
         result = subprocess.run(cmd, check=False, text=True)
-        print(f"构建完成，退出码: {result.returncode}")
+        safe_print(f"构建完成，退出码: {result.returncode}")
     except Exception as e:
-        print(f"调试构建失败: {e}")
+        safe_print(f"调试构建失败: {e}")
 
 def main():
     """主函数"""
-    print("🔧 打包问题诊断和修复工具")
-    print("专门解决'本地运行正常，打包后出现问题'的情况")
+    safe_print("🔧 打包问题诊断和修复工具")
+    safe_print("专门解决'本地运行正常，打包后出现问题'的情况")
     print("=" * 60)
     
     # 检查命令行参数
@@ -585,10 +601,10 @@ def main():
     diagnostic = PackagingDiagnostic()
     diagnostic.run_full_diagnostic()
     
-    print("\n🎯 下一步建议:")
-    print("1. 运行修复版构建: python build_macos_fixed.py")
-    print("2. 测试打包后的应用")
-    print("3. 如有问题，运行调试构建: python fix_packaging_issues.py --debug-build")
+    safe_print("\n🎯 下一步建议:")
+    safe_print("1. 运行修复版构建: python build_macos_fixed.py")
+    safe_print("2. 测试打包后的应用")
+    safe_print("3. 如有问题，运行调试构建: python fix_packaging_issues.py --debug-build")
 
 if __name__ == "__main__":
     main()

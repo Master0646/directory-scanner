@@ -9,6 +9,22 @@ import sys
 import os
 from pathlib import Path
 
+def safe_print(text):
+    """安全的打印函数，处理编码问题"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        import sys
+        if sys.platform.startswith('win'):
+            safe_text = text.encode('ascii', 'ignore').decode('ascii')
+            if not safe_text.strip():
+                safe_text = "[Unicode content - check logs for details]"
+            print(safe_text)
+        else:
+            print(text.encode('utf-8', 'ignore').decode('utf-8'))
+    except Exception:
+        print("[Output encoding error - check logs for details]")
+
 def check_dependencies():
     """检查依赖包是否已安装"""
     missing_packages = []
@@ -32,50 +48,50 @@ def check_dependencies():
 
 def install_dependencies():
     """安装缺失的依赖包"""
-    print("正在安装依赖包...")
+    safe_print("正在安装依赖包...")
     try:
         import subprocess
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-        print("✓ 依赖包安装完成")
+        safe_print("✓ 依赖包安装完成")
         return True
     except subprocess.CalledProcessError:
-        print("✗ 依赖包安装失败")
+        safe_print("✗ 依赖包安装失败")
         return False
 
 def main():
     """主函数"""
     print("=" * 50)
-    print("目录文件扫描器 v1.0")
+    safe_print("目录文件扫描器 v1.0")
     print("=" * 50)
     
     # 检查依赖
     missing = check_dependencies()
     if missing:
-        print("缺少以下依赖包:")
+        safe_print("缺少以下依赖包:")
         for pkg in missing:
             print(f"  - {pkg}")
         
         choice = input("\n是否自动安装依赖包？(y/n): ").lower().strip()
         if choice in ['y', 'yes', '是']:
             if not install_dependencies():
-                print("\n请手动安装依赖包:")
+                safe_print("\n请手动安装依赖包:")
                 print("pip install -r requirements.txt")
                 return
         else:
-            print("\n请手动安装依赖包后再运行程序")
+            safe_print("\n请手动安装依赖包后再运行程序")
             return
     
     # 启动主程序
     try:
-        print("\n正在启动目录扫描器...")
+        safe_print("\n正在启动目录扫描器...")
         from directory_scanner import main as scanner_main
         scanner_main()
     except ImportError as e:
-        print(f"\n导入错误: {e}")
-        print("请确保所有文件都在同一目录下")
+        safe_print(f"\n导入错误: {e}")
+        safe_print("请确保所有文件都在同一目录下")
     except Exception as e:
-        print(f"\n程序运行错误: {e}")
-        print("请检查系统环境和依赖包")
+        safe_print(f"\n程序运行错误: {e}")
+        safe_print("请检查系统环境和依赖包")
 
 if __name__ == "__main__":
     main()

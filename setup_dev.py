@@ -12,12 +12,28 @@ import subprocess
 import json
 from pathlib import Path
 
+def safe_print(text):
+    """安全的打印函数，处理编码问题"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        import sys
+        if sys.platform.startswith('win'):
+            safe_text = text.encode('ascii', 'ignore').decode('ascii')
+            if not safe_text.strip():
+                safe_text = "[Unicode content - check logs for details]"
+            print(safe_text)
+        else:
+            print(text.encode('utf-8', 'ignore').decode('utf-8'))
+    except Exception:
+        print("[Output encoding error - check logs for details]")
+
 def create_dev_config():
     """创建开发配置文件
     
     生成针对开发环境优化的配置
     """
-    print("📝 创建开发配置...")
+    safe_print("📝 创建开发配置...")
     
     dev_config = {
         "development": {
@@ -47,7 +63,7 @@ def create_dev_config():
     with open(config_file, 'w', encoding='utf-8') as f:
         json.dump(dev_config, f, indent=2, ensure_ascii=False)
     
-    print(f"✅ 开发配置已创建: {config_file}")
+    safe_print(f"✅ 开发配置已创建: {config_file}")
     return config_file
 
 def create_debug_launcher():
@@ -55,7 +71,7 @@ def create_debug_launcher():
     
     生成一个简化的启动脚本，包含调试选项
     """
-    print("🚀 创建调试启动器...")
+    safe_print("🚀 创建调试启动器...")
     
     launcher_content = '''#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -77,9 +93,9 @@ sys.path.insert(0, os.getcwd())
 
 if __name__ == "__main__":
     try:
-        print("🐛 调试模式启动...")
-        print(f"📁 工作目录: {os.getcwd()}")
-        print(f"🐍 Python版本: {sys.version}")
+        safe_print("🐛 调试模式启动...")
+        safe_print(f"📁 工作目录: {os.getcwd()}")
+        safe_print(f"🐍 Python版本: {sys.version}")
         print("-" * 50)
         
         # 导入并运行主程序
@@ -87,14 +103,14 @@ if __name__ == "__main__":
         directory_scanner.main()
         
     except ImportError as e:
-        print(f"❌ 导入错误: {e}")
-        print("请确保所有依赖已安装: pip install -r requirements.txt")
+        safe_print(f"❌ 导入错误: {e}")
+        safe_print("请确保所有依赖已安装: pip install -r requirements.txt")
     except Exception as e:
-        print(f"❌ 运行错误: {e}")
+        safe_print(f"❌ 运行错误: {e}")
         import traceback
         traceback.print_exc()
     finally:
-        print("\n🔚 调试会话结束")
+        safe_print("\n🔚 调试会话结束")
 '''
     
     launcher_file = Path("debug_launcher.py")
@@ -105,7 +121,7 @@ if __name__ == "__main__":
     if os.name != 'nt':
         os.chmod(launcher_file, 0o755)
     
-    print(f"✅ 调试启动器已创建: {launcher_file}")
+    safe_print(f"✅ 调试启动器已创建: {launcher_file}")
     return launcher_file
 
 def create_vscode_config():
@@ -113,7 +129,7 @@ def create_vscode_config():
     
     生成VS Code的launch.json配置文件
     """
-    print("🔧 创建VS Code调试配置...")
+    safe_print("🔧 创建VS Code调试配置...")
     
     vscode_dir = Path(".vscode")
     vscode_dir.mkdir(exist_ok=True)
@@ -169,7 +185,7 @@ def create_vscode_config():
     with open(settings_file, 'w', encoding='utf-8') as f:
         json.dump(settings_config, f, indent=2)
     
-    print(f"✅ VS Code配置已创建: {vscode_dir}")
+    safe_print(f"✅ VS Code配置已创建: {vscode_dir}")
     return vscode_dir
 
 def install_dev_dependencies():
@@ -177,7 +193,7 @@ def install_dev_dependencies():
     
     安装额外的开发工具和调试工具
     """
-    print("📦 检查开发依赖...")
+    safe_print("📦 检查开发依赖...")
     
     # 基础依赖
     basic_deps = ['tkinter', 'pandas', 'openpyxl', 'numpy']
@@ -196,32 +212,32 @@ def install_dev_dependencies():
     for dep in basic_deps:
         try:
             __import__(dep)
-            print(f"✅ {dep}")
+            safe_print(f"✅ {dep}")
         except ImportError:
             missing_basic.append(dep)
-            print(f"❌ {dep} (必需)")
+            safe_print(f"❌ {dep} (必需)")
     
     if missing_basic:
-        print(f"\n⚠️  缺少必需依赖: {', '.join(missing_basic)}")
-        print("请运行: pip install -r requirements.txt")
+        safe_print(f"\n⚠️  缺少必需依赖: {', '.join(missing_basic)}")
+        safe_print("请运行: pip install -r requirements.txt")
         return False
     
     # 检查开发依赖
-    print("\n🔍 检查开发工具...")
+    safe_print("\n🔍 检查开发工具...")
     available_dev_tools = []
     
     for tool, description in dev_deps.items():
         try:
             __import__(tool)
-            print(f"✅ {tool} - {description}")
+            safe_print(f"✅ {tool} - {description}")
             available_dev_tools.append(tool)
         except ImportError:
-            print(f"⚪ {tool} - {description} (可选)")
+            safe_print(f"⚪ {tool} - {description} (可选)")
     
     if available_dev_tools:
-        print(f"\n🎉 可用开发工具: {', '.join(available_dev_tools)}")
+        safe_print(f"\n🎉 可用开发工具: {', '.join(available_dev_tools)}")
     else:
-        print("\n💡 提示: 可安装开发工具提升开发体验")
+        safe_print("\n💡 提示: 可安装开发工具提升开发体验")
         print("   pip install black flake8 pytest")
     
     return True
@@ -231,7 +247,7 @@ def create_makefile():
     
     提供make命令快捷方式
     """
-    print("📜 创建Makefile...")
+    safe_print("📜 创建Makefile...")
     
     makefile_content = '''# 目录扫描器开发工具
 # 使用 make <命令> 执行常用操作
@@ -300,8 +316,8 @@ check:
     with open(makefile_path, 'w', encoding='utf-8') as f:
         f.write(makefile_content)
     
-    print(f"✅ Makefile已创建: {makefile_path}")
-    print("💡 现在可以使用 'make run' 快速启动程序")
+    safe_print(f"✅ Makefile已创建: {makefile_path}")
+    safe_print("💡 现在可以使用 'make run' 快速启动程序")
     return makefile_path
 
 def show_quick_start_guide():
@@ -324,7 +340,7 @@ def show_quick_start_guide():
 
 🐛 调试技巧:
   1. 修改代码后直接重新运行，无需构建
-  2. 使用print()添加调试信息
+  2. 使用safe_print()添加调试信息
   3. 在VS Code中设置断点进行调试
   4. 查看终端输出的详细错误信息
 
@@ -346,16 +362,16 @@ def show_quick_start_guide():
 
 def main():
     """主函数 - 设置完整的开发环境"""
-    print("🛠️  开发环境快速设置")
+    safe_print("🛠️  开发环境快速设置")
     print("=" * 40)
     
     try:
         # 检查基础环境
         if not install_dev_dependencies():
-            print("\n❌ 基础依赖检查失败，请先安装必需依赖")
+            safe_print("\n❌ 基础依赖检查失败，请先安装必需依赖")
             return
         
-        print("\n📝 创建开发配置文件...")
+        safe_print("\n📝 创建开发配置文件...")
         
         # 创建各种配置文件
         create_dev_config()
@@ -363,13 +379,13 @@ def main():
         create_vscode_config()
         create_makefile()
         
-        print("\n✅ 开发环境设置完成！")
+        safe_print("\n✅ 开发环境设置完成！")
         
         # 显示使用指南
         show_quick_start_guide()
         
     except Exception as e:
-        print(f"❌ 设置过程中出错: {e}")
+        safe_print(f"❌ 设置过程中出错: {e}")
         import traceback
         traceback.print_exc()
 

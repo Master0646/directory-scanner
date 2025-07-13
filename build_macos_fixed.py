@@ -12,18 +12,34 @@ import subprocess
 import shutil
 from pathlib import Path
 
+def safe_print(text):
+    """安全的打印函数，处理编码问题"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        import sys
+        if sys.platform.startswith('win'):
+            safe_text = text.encode('ascii', 'ignore').decode('ascii')
+            if not safe_text.strip():
+                safe_text = "[Unicode content - check logs for details]"
+            print(safe_text)
+        else:
+            print(text.encode('utf-8', 'ignore').decode('utf-8'))
+    except Exception:
+        print("[Output encoding error - check logs for details]")
+
 def build_fixed_macos():
     """构建修复版macOS应用程序
     
     包含所有必要的修复参数
     """
-    print("🚀 开始构建修复版macOS应用程序...")
+    safe_print("🚀 开始构建修复版macOS应用程序...")
     
     # 清理之前的构建文件
     build_dirs = ['build', 'dist']
     for dir_name in build_dirs:
         if os.path.exists(dir_name):
-            print(f"🧹 清理目录: {dir_name}")
+            safe_print(f"🧹 清理目录: {dir_name}")
             shutil.rmtree(dir_name)
     
     # 增强的构建命令参数
@@ -109,42 +125,42 @@ def build_fixed_macos():
     for data_file in extra_data_files:
         if os.path.exists(data_file):
             cmd.insert(-1, f'--add-data={data_file}:.')
-            print(f"📄 添加数据文件: {data_file}")
+            safe_print(f"📄 添加数据文件: {data_file}")
     
-    print("📦 执行增强版PyInstaller构建...")
-    print(f"命令参数数量: {len(cmd)}")
+    safe_print("📦 执行增强版PyInstaller构建...")
+    safe_print(f"命令参数数量: {len(cmd)}")
     
     try:
         # 执行构建
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print("✅ 构建成功！")
+        safe_print("✅ 构建成功！")
         
         # 检查构建结果
         app_path = Path('dist/目录扫描器.app')
         if app_path.exists():
-            print(f"📱 应用程序已生成: {app_path.absolute()}")
-            print("\n🎉 修复版构建完成！")
-            print("\n🔧 应用的修复:")
-            print("• 增加了完整的隐藏导入配置")
-            print("• 包含了所有必要的数据文件")
-            print("• 优化了模块收集策略")
-            print("• 排除了不必要的大型模块")
+            safe_print(f"📱 应用程序已生成: {app_path.absolute()}")
+            safe_print("\n🎉 修复版构建完成！")
+            safe_print("\n🔧 应用的修复:")
+            safe_print("• 增加了完整的隐藏导入配置")
+            safe_print("• 包含了所有必要的数据文件")
+            safe_print("• 优化了模块收集策略")
+            safe_print("• 排除了不必要的大型模块")
             
         else:
-            print("❌ 未找到生成的应用程序")
+            safe_print("❌ 未找到生成的应用程序")
             
     except subprocess.CalledProcessError as e:
-        print(f"❌ 构建失败: {e}")
+        safe_print(f"❌ 构建失败: {e}")
         if e.stderr:
-            print(f"错误输出: {e.stderr}")
+            safe_print(f"错误输出: {e.stderr}")
         return False
     except Exception as e:
-        print(f"❌ 构建过程中发生错误: {e}")
+        safe_print(f"❌ 构建过程中发生错误: {e}")
         return False
     
     return True
 
 if __name__ == "__main__":
-    print("🔧 修复版macOS应用程序构建工具")
+    safe_print("🔧 修复版macOS应用程序构建工具")
     print("=" * 50)
     build_fixed_macos()
