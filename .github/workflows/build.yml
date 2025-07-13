@@ -1,60 +1,151 @@
 
-name: Build Executables
+name: 🚀 跨平台自动构建
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, develop ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号 (可选)'
+        required: false
+        default: 'auto'
+
+env:
+  PYTHON_VERSION: '3.12'
+  APP_NAME: '目录文件生成器'
 
 jobs:
+  # 预检查作业
+  pre-check:
+    name: 🔍 预检查
+    runs-on: ubuntu-latest
+    outputs:
+      should-build: ${{ steps.check.outputs.should-build }}
+      version: ${{ steps.version.outputs.version }}
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: 设置Python环境
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 运行测试检查
+      id: check
+      run: |
+        echo "🧪 运行构建脚本测试..."
+        python test_build_scripts.py
+        echo "✅ 测试通过，可以继续构建"
+        echo "should-build=true" >> $GITHUB_OUTPUT
+    
+    - name: 生成版本号
+      id: version
+      run: |
+        if [ "${{ github.event.inputs.version }}" != "" ] && [ "${{ github.event.inputs.version }}" != "auto" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        elif [[ $GITHUB_REF == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/}
+        else
+          VERSION="$(date +'%Y.%m.%d')-$(echo $GITHUB_SHA | cut -c1-7)"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "📦 构建版本: $VERSION"
+
+  # 跨平台构建作业
   build:
+    name: 🔨 构建 ${{ matrix.platform }}
+    needs: pre-check
+    if: needs.pre-check.outputs.should-build == 'true'
     runs-on: ${{ matrix.os }}
+    
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
             platform: windows
-            ext: .exe
+            script: build_windows_fixed.py
+            artifact-name: Windows-x64
+            artifact-path: 'dist/*.exe'
           - os: macos-latest
             platform: macos
-            ext: .app
+            script: build_macos_fixed.py
+            artifact-name: macOS-Universal
+            artifact-path: 'dist/*.app'
           - os: ubuntu-latest
             platform: linux
-            ext: ""
+            script: cross_platform_build.py
+            artifact-name: Linux-x64
+            artifact-path: 'dist/*'
     
     steps:
-    - uses: actions/checkout@v3
+    - name: 检出代码
+      uses: actions/checkout@v4
     
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: 设置Python环境
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
     
-    - name: Install dependencies
+    - name: 安装系统依赖 (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-tk
+    
+    - name: 安装Python依赖
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller
         pip install -r requirements.txt
     
-    - name: Build executable (Windows)
-      if: matrix.platform == 'windows'
+    - name: 运行运行时检查
       run: |
-        pyinstaller --onefile --windowed --clean --noconfirm --name="DirectoryScanner" --distpath=dist/windows --hidden-import=pandas --hidden-import=numpy --hidden-import=openpyxl --collect-all=numpy --collect-all=pandas --noupx directory_scanner.py
+        echo "🔍 检查运行时环境..."
+        python runtime_error_detector.py
     
-    - name: Build executable (macOS)
-      if: matrix.platform == 'macos'
+    - name: 执行平台构建
       run: |
-        pyinstaller --onedir --windowed --clean --noconfirm --name="目录扫描器" --icon=icon.png --optimize=2 --strip --hidden-import=pandas --hidden-import=numpy --hidden-import=openpyxl --collect-all=numpy --collect-all=pandas --noupx --add-data="icon.png:." directory_scanner.py
+        echo "🔨 开始 ${{ matrix.platform }} 平台构建..."
+        python ${{ matrix.script }}
     
-    - name: Build executable (Linux)
-      if: matrix.platform == 'linux'
+    - name: 验证构建结果
       run: |
-        pyinstaller --onefile --windowed --clean --noconfirm --name="DirectoryScanner" --icon=icon.png --distpath=dist/linux --hidden-import=pandas --hidden-import=numpy --hidden-import=openpyxl --collect-all=numpy --collect-all=pandas --noupx directory_scanner.py
+        echo "✅ 验证构建输出..."
+        ls -la dist/
+        if [ "${{ matrix.platform }}" = "macos" ]; then
+          find dist/ -name "*.app" -exec echo "📱 macOS应用: {}" \;
+        elif [ "${{ matrix.platform }}" = "windows" ]; then
+          find dist/ -name "*.exe" -exec echo "💻 Windows应用: {}" \;
+        else
+          find dist/ -type f -executable -exec echo "🐧 Linux应用: {}" \;
+        fi
     
-    - name: Upload artifacts
+    - name: 上传构建产物
       uses: actions/upload-artifact@v4
       with:
-        name: 目录扫描器-${{ matrix.platform }}
-        path: dist/${{ matrix.platform }}/
+        name: ${{ env.APP_NAME }}-${{ matrix.artifact-name }}-${{ needs.pre-check.outputs.version }}
+        path: ${{ matrix.artifact-path }}
+        retention-days: 30
+    
+    - name: 上传构建日志
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs-${{ matrix.platform }}-${{ needs.pre-check.outputs.version }}
+        path: logs/
+        retention-days: 7

@@ -1,6 +1,23 @@
-# 目录文件扫描器
+# 🗂️ 目录文件生成器
 
-一个简单易用的目录文件扫描工具，支持扫描指定目录下的所有文件和文件夹，并可以导出为Excel或CSV格式。
+[![构建状态](https://github.com/用户名/目录文件生成器/workflows/🚀%20跨平台自动构建/badge.svg)](https://github.com/用户名/目录文件生成器/actions)
+[![最新发布](https://img.shields.io/github/v/release/用户名/目录文件生成器)](https://github.com/用户名/目录文件生成器/releases/latest)
+[![下载量](https://img.shields.io/github/downloads/用户名/目录文件生成器/total)](https://github.com/用户名/目录文件生成器/releases)
+[![许可证](https://img.shields.io/github/license/用户名/目录文件生成器)](LICENSE)
+
+一个功能强大、简单易用的目录文件扫描工具，支持扫描指定目录下的所有文件和文件夹，并可以导出为Excel或CSV格式。
+
+## 📥 快速下载
+
+**无需安装Python环境，直接下载可执行文件：**
+
+| 平台 | 下载链接 | 说明 |
+|------|----------|------|
+| 🪟 Windows | [下载 .exe](https://github.com/用户名/目录文件生成器/releases/latest/download/目录文件生成器-Windows-x64.exe) | 双击即可运行 |
+| 🍎 macOS | [下载 .app.zip](https://github.com/用户名/目录文件生成器/releases/latest/download/目录文件生成器-macOS-Universal.app.zip) | 解压后拖入应用程序文件夹 |
+| 🐧 Linux | [下载 .tar.gz](https://github.com/用户名/目录文件生成器/releases/latest/download/目录文件生成器-Linux-x64.tar.gz) | 解压后运行可执行文件 |
+
+> 💡 **提示**: 点击上方链接直接下载最新版本，或访问 [Releases 页面](https://github.com/用户名/目录文件生成器/releases) 查看所有版本。
 
 ## 功能特性
 
@@ -35,43 +52,49 @@ python directory_scanner.py
 3. **查看结果**：扫描完成后，在结果区域查看目录树结构
 4. **导出数据**：点击"导出为Excel"或"导出为CSV"按钮保存扫描结果
 
-## 打包为可执行文件
+## 🔨 开发者构建
 
-### Windows系统
+如果你想从源码构建应用程序，我们提供了完整的构建工具链：
 
-```bash
-# 安装PyInstaller
-pip install pyinstaller
-
-# 打包为单个可执行文件
-pyinstaller --onefile --windowed --name="目录扫描器" directory_scanner.py
-
-# 可执行文件将生成在 dist/ 目录下
-```
-
-### Mac系统
+### 快速构建
 
 ```bash
-# 安装PyInstaller
-pip install pyinstaller
+# 1. 克隆仓库
+git clone https://github.com/用户名/目录文件生成器.git
+cd 目录文件生成器
 
-# 打包为Mac应用程序
-pyinstaller --onefile --windowed --name="目录扫描器" directory_scanner.py
+# 2. 安装依赖
+pip install -r requirements.txt
 
-# 应用程序将生成在 dist/ 目录下
+# 3. 运行测试
+python test_build_scripts.py
+
+# 4. 选择平台构建
+# macOS:
+python build_macos_fixed.py
+
+# Windows:
+python build_windows_fixed.py
+
+# 跨平台:
+python cross_platform_build.py
 ```
 
-### 高级打包选项
+### 构建工具说明
 
-如果需要添加图标或其他资源：
+| 脚本 | 用途 | 推荐指数 |
+|------|------|----------|
+| `build_macos_fixed.py` | macOS优化构建 | ⭐⭐⭐⭐⭐ |
+| `build_windows_fixed.py` | Windows优化构建 | ⭐⭐⭐⭐⭐ |
+| `cross_platform_build.py` | 跨平台自动化构建 | ⭐⭐⭐⭐ |
+| `test_build_scripts.py` | 构建环境测试 | ⭐⭐⭐⭐ |
+| `fix_packaging_issues.py` | 问题诊断修复 | ⭐⭐⭐⭐ |
 
-```bash
-# Windows (需要准备icon.ico文件)
-pyinstaller --onefile --windowed --icon=icon.ico --name="目录扫描器" directory_scanner.py
+### 详细文档
 
-# Mac (需要准备icon.icns文件)
-pyinstaller --onefile --windowed --icon=icon.icns --name="目录扫描器" directory_scanner.py
-```
+- 📖 [构建指南](BUILD_GUIDE.md) - 完整的构建说明
+- 🧪 [测试指南](TESTING_GUIDE.md) - 测试流程说明
+- 🚀 [发布指南](RELEASE_GUIDE.md) - 自动化发布流程
 
 ## 输出格式说明
 
@@ -113,9 +136,48 @@ pyinstaller --onefile --windowed --icon=icon.icns --name="目录扫描器" direc
 - 依赖包是否正确安装
 - 系统权限设置
 
-## 版本历史
+## 🔄 自动化构建
 
-- v1.0 - 初始版本
-  - 基本目录扫描功能
-  - Excel和CSV导出
-  - 跨平台GUI界面
+本项目使用GitHub Actions实现自动化构建和发布：
+
+- ✅ **持续集成**: 每次代码提交自动运行测试
+- 🔨 **跨平台构建**: 自动构建Windows、macOS、Linux版本
+- 📦 **自动发布**: 标签推送时自动创建Release
+- 🧪 **质量保证**: 构建前自动运行完整测试套件
+
+## 📊 项目统计
+
+- 🛠️ **构建脚本**: 6个专用构建脚本
+- 🧪 **测试工具**: 3个测试和诊断工具
+- 📚 **文档**: 4个详细指南文档
+- 🌍 **平台支持**: Windows、macOS、Linux
+- 🔧 **开发工具**: 5个开发调试脚本
+
+## 🤝 贡献指南
+
+欢迎贡献代码！请遵循以下步骤：
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 🙏 致谢
+
+- 感谢所有贡献者的支持
+- 感谢开源社区提供的优秀工具和库
+
+## 📞 联系我们
+
+- 🐛 [报告问题](https://github.com/用户名/目录文件生成器/issues)
+- 💡 [功能建议](https://github.com/用户名/目录文件生成器/issues/new?template=feature_request.md)
+- 📧 [联系邮箱](mailto:your-email@example.com)
+
+---
+
+⭐ 如果这个项目对你有帮助，请给我们一个星标！

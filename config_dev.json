@@ -1,0 +1,23 @@
+{
+  "development": {
+    "debug_mode": true,
+    "log_level": "DEBUG",
+    "auto_reload": true,
+    "show_console": true,
+    "max_depth_default": 2,
+    "update_interval": 50,
+    "enable_profiling": false
+  },
+  "debugging": {
+    "verbose_logging": true,
+    "trace_imports": false,
+    "memory_monitoring": false,
+    "performance_timing": true
+  },
+  "ui": {
+    "theme": "default",
+    "window_size": "1000x800",
+    "remember_position": true,
+    "auto_save_settings": true
+  }
+}

@@ -55,6 +55,12 @@ Thumbs.db
 htmlcov/
 .coverage
 .pytest_cache/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
 
 # 文档生成
 docs/_build/
@@ -63,3 +69,26 @@ docs/_build/
 *.egg-info/
 dist/
 build/
+
+# 构建脚本生成的文件
+version_info.txt
+build_info.json
+test_output/
+test_results/
+
+# 导出的数据文件
+*.xlsx
+*.csv
+
+# GitHub Actions 缓存
+.github/workflows/cache/
+
+# 更多临时文件
+*.bak
+*.backup
+*~
+
+# 平台特定的可执行文件
+*.AppImage
+*.flatpak
+*.snap

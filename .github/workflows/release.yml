@@ -1,0 +1,233 @@
+name: 📦 自动发布
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '发布标签 (例如: v1.0.0)'
+        required: true
+      prerelease:
+        description: '是否为预发布版本'
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: '3.12'
+  APP_NAME: '目录文件生成器'
+
+jobs:
+  # 构建所有平台
+  build-all:
+    name: 🔨 构建所有平台
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            script: build_windows_fixed.py
+            artifact-name: Windows-x64
+            artifact-path: 'dist/*.exe'
+            release-name: 'Windows-x64.exe'
+          - os: macos-latest
+            platform: macos
+            script: build_macos_fixed.py
+            artifact-name: macOS-Universal
+            artifact-path: 'dist/*.app'
+            release-name: 'macOS-Universal.app'
+          - os: ubuntu-latest
+            platform: linux
+            script: cross_platform_build.py
+            artifact-name: Linux-x64
+            artifact-path: 'dist/*'
+            release-name: 'Linux-x64'
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+    
+    - name: 设置Python环境
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: 安装系统依赖 (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-tk
+    
+    - name: 安装Python依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install -r requirements.txt
+    
+    - name: 运行预构建检查
+      run: |
+        echo "🔍 运行预构建检查..."
+        python test_build_scripts.py
+        python runtime_error_detector.py
+    
+    - name: 执行构建
+      run: |
+        echo "🔨 开始 ${{ matrix.platform }} 平台构建..."
+        python ${{ matrix.script }}
+    
+    - name: 准备发布文件
+      run: |
+        echo "📦 准备发布文件..."
+        mkdir -p release
+        
+        if [ "${{ matrix.platform }}" = "windows" ]; then
+          # Windows: 复制exe文件
+          find dist/ -name "*.exe" -exec cp {} release/${{ env.APP_NAME }}-${{ matrix.release-name }} \;
+        elif [ "${{ matrix.platform }}" = "macos" ]; then
+          # macOS: 打包app为zip
+          cd dist
+          zip -r ../release/${{ env.APP_NAME }}-${{ matrix.release-name }}.zip *.app
+          cd ..
+        else
+          # Linux: 打包为tar.gz
+          cd dist
+          tar -czf ../release/${{ env.APP_NAME }}-${{ matrix.release-name }}.tar.gz *
+          cd ..
+        fi
+        
+        echo "📋 发布文件列表:"
+        ls -la release/
+    
+    - name: 上传发布文件
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-${{ matrix.platform }}
+        path: release/
+        retention-days: 30
+
+  # 创建GitHub Release
+  create-release:
+    name: 🚀 创建发布
+    needs: build-all
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: 获取版本信息
+      id: version
+      run: |
+        if [ "${{ github.event.inputs.tag }}" != "" ]; then
+          TAG="${{ github.event.inputs.tag }}"
+        else
+          TAG=${GITHUB_REF#refs/tags/}
+        fi
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+        echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+        echo "📦 发布版本: $TAG"
+    
+    - name: 生成更新日志
+      id: changelog
+      run: |
+        echo "📝 生成更新日志..."
+        
+        # 获取上一个标签
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        
+        if [ "$PREV_TAG" != "" ]; then
+          echo "📋 自 $PREV_TAG 以来的更改:"
+          CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
+        else
+          echo "📋 首次发布"
+          CHANGELOG="首次发布 ${{ env.APP_NAME }}"
+        fi
+        
+        # 创建发布说明
+        cat > release_notes.md << EOF
+        # ${{ env.APP_NAME }} ${{ steps.version.outputs.version }}
+        
+        ## 📦 下载
+        
+        | 平台 | 文件 | 说明 |
+        |------|------|------|
+        | Windows | \`${{ env.APP_NAME }}-Windows-x64.exe\` | Windows 可执行文件 |
+        | macOS | \`${{ env.APP_NAME }}-macOS-Universal.app.zip\` | macOS 应用程序包 |
+        | Linux | \`${{ env.APP_NAME }}-Linux-x64.tar.gz\` | Linux 可执行文件 |
+        
+        ## 🔧 安装说明
+        
+        ### Windows
+        1. 下载 \`${{ env.APP_NAME }}-Windows-x64.exe\`
+        2. 双击运行即可
+        
+        ### macOS
+        1. 下载 \`${{ env.APP_NAME }}-macOS-Universal.app.zip\`
+        2. 解压缩后将应用拖入应用程序文件夹
+        3. 首次运行可能需要在系统偏好设置中允许运行
+        
+        ### Linux
+        1. 下载 \`${{ env.APP_NAME }}-Linux-x64.tar.gz\`
+        2. 解压缩: \`tar -xzf ${{ env.APP_NAME }}-Linux-x64.tar.gz\`
+        3. 运行可执行文件
+        
+        ## 📋 更新内容
+        
+        $CHANGELOG
+        
+        ## ⚠️ 系统要求
+        
+        - **Windows**: Windows 10 或更高版本
+        - **macOS**: macOS 10.14 或更高版本
+        - **Linux**: 支持 GTK 的现代 Linux 发行版
+        
+        ## 🐛 问题反馈
+        
+        如果遇到问题，请在 [Issues](https://github.com/${{ github.repository }}/issues) 中反馈。
+        EOF
+        
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        cat release_notes.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: 下载所有构建产物
+      uses: actions/download-artifact@v4
+      with:
+        pattern: release-*
+        path: all-releases
+        merge-multiple: true
+    
+    - name: 验证发布文件
+      run: |
+        echo "📋 所有发布文件:"
+        find all-releases -type f -exec echo "  {}" \;
+        
+        echo "📊 文件大小:"
+        find all-releases -type f -exec ls -lh {} \;
+    
+    - name: 创建GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: ${{ env.APP_NAME }} ${{ steps.version.outputs.version }}
+        body: ${{ steps.changelog.outputs.changelog }}
+        files: all-releases/*
+        prerelease: ${{ github.event.inputs.prerelease || false }}
+        draft: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: 发布成功通知
+      run: |
+        echo "🎉 发布成功！"
+        echo "📦 版本: ${{ steps.version.outputs.tag }}"
+        echo "🔗 发布页面: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
+        echo "📁 包含文件:"
+        find all-releases -type f -exec basename {} \;
