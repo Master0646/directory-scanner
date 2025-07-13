@@ -41,17 +41,17 @@ jobs:
     - name: Build executable (Windows)
       if: matrix.platform == 'windows'
       run: |
-        pyinstaller --onefile --windowed --clean --noconfirm --name="目录扫描器" --distpath=dist/windows --hidden-import=pandas --hidden-import=numpy --hidden-import=openpyxl directory_scanner.py
+        pyinstaller --onefile --windowed --clean --noconfirm --name="DirectoryScanner" --distpath=dist/windows --hidden-import=pandas --hidden-import=numpy --hidden-import=openpyxl --collect-all=numpy --collect-all=pandas --noupx directory_scanner.py
     
     - name: Build executable (macOS)
       if: matrix.platform == 'macos'
       run: |
-        pyinstaller --onedir --windowed --clean --noconfirm --name="目录扫描器" --icon=icon.png --distpath=dist/macos --optimize=2 --strip --hidden-import=pandas --hidden-import=numpy --hidden-import=openpyxl directory_scanner.py
+        pyinstaller --onedir --windowed --clean --noconfirm --name="目录扫描器" --icon=icon.png --optimize=2 --strip --hidden-import=pandas --hidden-import=numpy --hidden-import=openpyxl --collect-all=numpy --collect-all=pandas --noupx --add-data="icon.png:." directory_scanner.py
     
     - name: Build executable (Linux)
       if: matrix.platform == 'linux'
       run: |
-        pyinstaller --onefile --clean --noconfirm --name="目录扫描器" --icon=icon.png --distpath=dist/linux --hidden-import=pandas --hidden-import=numpy --hidden-import=openpyxl directory_scanner.py
+        pyinstaller --onefile --windowed --clean --noconfirm --name="DirectoryScanner" --icon=icon.png --distpath=dist/linux --hidden-import=pandas --hidden-import=numpy --hidden-import=openpyxl --collect-all=numpy --collect-all=pandas --noupx directory_scanner.py
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4

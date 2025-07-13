@@ -47,6 +47,9 @@ def build_optimized_macos():
         '--hidden-import=pandas',    # 明确导入pandas
         '--hidden-import=numpy',     # 明确导入numpy
         '--hidden-import=openpyxl',  # 明确导入openpyxl
+        '--collect-all=numpy',       # 收集numpy的所有子模块
+        '--collect-all=pandas',      # 收集pandas的所有子模块
+        '--noupx',                   # 禁用UPX压缩避免冲突
         '--add-data=icon.png:.',     # 添加图标文件
         'directory_scanner.py'       # 主程序文件
     ]
