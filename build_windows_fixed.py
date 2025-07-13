@@ -37,10 +37,16 @@ def show_progress():
     chars = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
     i = 0
     while not progress_done:
-        safe_print(f"\r🔨 正在打包中 {chars[i % len(chars)]} 请耐心等待...", end="", flush=True)
+        try:
+            print(f"\r🔨 正在打包中 {chars[i % len(chars)]} 请耐心等待...", end="", flush=True)
+        except Exception:
+            pass
         time.sleep(0.1)
         i += 1
-    safe_print("\r✅ 打包完成！" + " " * 30)
+    try:
+        print("\r✅ 打包完成！" + " " * 30)
+    except Exception:
+        safe_print("✅ 打包完成！")
 
 def create_version_info():
     """创建Windows版本信息文件
@@ -257,7 +263,20 @@ def build_fixed_windows():
             # 查找生成的文件
             dist_dir = current_dir / "dist"
             if dist_dir.exists():
+                # 首先查找 .exe 文件
                 files = list(dist_dir.glob("*.exe"))
+                
+                # 如果没有找到 .exe 文件，查找没有扩展名的文件（交叉编译情况）
+                if not files:
+                    all_files = [f for f in dist_dir.iterdir() if f.is_file()]
+                    for file in all_files:
+                        if file.suffix == "" and file.name != ".DS_Store":
+                            # 重命名为 .exe 文件
+                            new_name = file.with_suffix(".exe")
+                            file.rename(new_name)
+                            files.append(new_name)
+                            safe_print(f"🔄 重命名文件: {file.name} -> {new_name.name}")
+                
                 if files:
                     for file in files:
                         safe_print(f"📦 生成文件: {file}")
