@@ -1,0 +1,49 @@
+# Windows Docker 构建文件
+# 用于在 Docker 中构建真正的 Windows 可执行文件
+
+# 使用官方的 Windows Server Core 镜像
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# 设置工作目录
+WORKDIR C:\\app
+
+# 安装 Python 3.11
+RUN powershell -Command \
+    "Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.7/python-3.11.7-amd64.exe' -OutFile 'python-installer.exe'; \
+    Start-Process -FilePath '.\\python-installer.exe' -ArgumentList '/quiet', 'InstallAllUsers=1', 'PrependPath=1', 'Include_test=0' -Wait; \
+    Remove-Item '.\\python-installer.exe'"
+
+# 验证 Python 安装
+RUN python --version
+RUN pip --version
+
+# 升级 pip 和安装基础工具
+RUN pip install --upgrade pip setuptools wheel
+
+# 安装 PyInstaller 和其他依赖
+RUN pip install pyinstaller
+
+# 复制项目文件
+COPY . C:\\app
+
+# 安装项目依赖
+RUN pip install -r requirements.txt
+
+# 设置环境变量
+ENV PYTHONPATH=C:\\app
+ENV PYTHONIOENCODING=utf-8
+
+# 创建构建脚本
+RUN echo @echo off > build.bat && \
+    echo echo Starting Windows build in Docker... >> build.bat && \
+    echo python build_windows_docker.py >> build.bat && \
+    echo echo Build completed! >> build.bat && \
+    echo pause >> build.bat
+
+# 设置默认命令
+CMD ["cmd", "/c", "build.bat"]
+
+# 构建说明:
+# 1. 构建镜像: docker build -f Dockerfile.windows -t directory-scanner-windows .
+# 2. 运行构建: docker run --rm -v ${PWD}/dist:/app/dist directory-scanner-windows
+# 3. 生成的 exe 文件将在 dist 目录中

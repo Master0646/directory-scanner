@@ -1,0 +1,36 @@
+# Docker Compose 配置文件
+# 用于简化 Windows 构建过程
+
+version: '3.8'
+
+services:
+  windows-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile.windows
+    image: directory-scanner-windows:latest
+    container_name: directory-scanner-windows-builder
+    volumes:
+      # 将构建结果映射到主机
+      - ./dist:/app/dist
+      # 可选：映射日志目录
+      - ./logs:/app/logs
+    environment:
+      - PYTHONIOENCODING=utf-8
+      - PYTHONPATH=/app
+    # Windows 容器配置
+    platform: windows/amd64
+    # 构建完成后自动删除容器
+    restart: "no"
+    # 设置内存限制（可选）
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+# 使用说明:
+# 1. 构建并运行: docker-compose -f docker-compose.windows.yml up --build
+# 2. 仅构建镜像: docker-compose -f docker-compose.windows.yml build
+# 3. 清理资源: docker-compose -f docker-compose.windows.yml down --rmi all
