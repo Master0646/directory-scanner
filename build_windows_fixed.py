@@ -121,7 +121,7 @@ def build_fixed_windows():
         return False
     
     # 清理之前的构建文件
-    build_dirs = ['build/windows', 'dist/windows']
+    build_dirs = ['build', 'dist']
     for dir_name in build_dirs:
         dir_path = current_dir / dir_name
         if dir_path.exists():
@@ -152,8 +152,8 @@ def build_fixed_windows():
         '--clean',               # 清理缓存
         '--noconfirm',           # 不询问确认
         '--name=目录扫描器',      # 应用名称
-        '--distpath=dist/windows',  # 输出目录
-        '--workpath=build/windows', # 工作目录
+        '--distpath=dist',      # 输出目录
+        '--workpath=build',     # 工作目录
         '--specpath=.',          # spec文件位置
         '--optimize=2',          # Python字节码优化
     ]
@@ -255,7 +255,7 @@ def build_fixed_windows():
             safe_print("\n🎉 Windows exe打包成功！")
             
             # 查找生成的文件
-            dist_dir = current_dir / "dist" / "windows"
+            dist_dir = current_dir / "dist"
             if dist_dir.exists():
                 files = list(dist_dir.glob("*.exe"))
                 if files:
@@ -273,7 +273,7 @@ def build_fixed_windows():
                 safe_print("• 添加了Windows版本信息")
                 
                 safe_print("\n✨ Windows使用说明:")
-                safe_print("1. exe文件位于 dist/windows/ 目录")
+                safe_print("1. exe文件位于 dist/ 目录")
                 safe_print("2. 双击即可运行，无需Python环境")
                 safe_print("3. 可以复制到其他Windows电脑使用")
                 safe_print("4. 支持Windows 7/8/10/11")
@@ -378,7 +378,7 @@ def main():
         try:
             choice = input("\n🧹 是否清理临时文件？(y/n): ").lower().strip()
             if choice in ['y', 'yes', '是']:
-                build_dir = Path(__file__).parent / "build" / "windows"
+                build_dir = Path(__file__).parent / "build"
                 if build_dir.exists():
                     shutil.rmtree(build_dir)
                     safe_print("✅ 临时文件已清理")

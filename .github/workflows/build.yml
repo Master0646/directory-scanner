@@ -126,22 +126,46 @@ jobs:
         echo "🔍 检查运行时环境..."
         python runtime_error_detector.py
     
+    - name: Set encoding for Windows
+      if: matrix.platform == 'windows'
+      run: |
+        echo "PYTHONIOENCODING=utf-8" >> $env:GITHUB_ENV
+        echo "PYTHONUTF8=1" >> $env:GITHUB_ENV
+        echo "PYTHONLEGACYWINDOWSSTDIO=utf-8" >> $env:GITHUB_ENV
+      shell: pwsh
+    
     - name: 执行平台构建
       run: |
         echo "🔨 开始 ${{ matrix.platform }} 平台构建..."
         python ${{ matrix.script }}
+      shell: bash
     
-    - name: 验证构建结果
+    - name: 验证构建结果 (Windows)
+      if: matrix.platform == 'windows'
+      run: |
+        Write-Host "✅ 验证构建输出..."
+        Get-ChildItem -Path "dist" -Recurse | Format-Table Name, Length, LastWriteTime
+        $exeFiles = Get-ChildItem -Path "dist" -Filter "*.exe" -Recurse
+        foreach ($file in $exeFiles) {
+          Write-Host "💻 Windows应用: $($file.FullName)"
+        }
+        if ($exeFiles.Count -eq 0) {
+          Write-Host "❌ 未找到 .exe 文件"
+          exit 1
+        }
+      shell: pwsh
+    
+    - name: 验证构建结果 (macOS/Linux)
+      if: matrix.platform != 'windows'
       run: |
         echo "✅ 验证构建输出..."
         ls -la dist/
         if [ "${{ matrix.platform }}" = "macos" ]; then
           find dist/ -name "*.app" -exec echo "📱 macOS应用: {}" \;
-        elif [ "${{ matrix.platform }}" = "windows" ]; then
-          find dist/ -name "*.exe" -exec echo "💻 Windows应用: {}" \;
         else
           find dist/ -type f -executable -exec echo "🐧 Linux应用: {}" \;
         fi
+      shell: bash
     
     - name: 上传构建产物
       uses: actions/upload-artifact@v4
